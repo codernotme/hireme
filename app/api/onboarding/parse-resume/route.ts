@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import pdf from "pdf-parse";
 
 import { env } from "@/config/env.server";
 
@@ -59,6 +58,7 @@ const callOllama = async (text: string, baseUrl: string, model: string) => {
 };
 
 export async function POST(request: Request) {
+  const { default: pdfParse } = await import("pdf-parse/lib/pdf-parse");
   const formData = await request.formData();
   const file = formData.get("file");
   const baseUrl = String(formData.get("ollamaBaseUrl") || env.ollamaBaseUrl);
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     file.type === "application/pdf" ||
     file.name.toLowerCase().endsWith(".pdf")
   ) {
-    const parsed = await pdf(buffer);
+    const parsed = await pdfParse(buffer);
     text = parsed.text ?? "";
   } else {
     text = buffer.toString("utf-8");

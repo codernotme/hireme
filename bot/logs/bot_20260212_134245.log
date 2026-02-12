@@ -1,0 +1,10 @@
+2026-02-12 13:42:45,317 - config.settings - INFO - Configuration loaded from /home/codernotme/Projects/Github/hireme/bot/config/config.yaml
+2026-02-12 13:42:45,317 - modules.ollama_ai - INFO - Initialized Ollama with model: llama2
+2026-02-12 13:42:45,669 - modules.x_bot - ERROR - X authentication failed: 401 Unauthorized
+Unauthorized
+2026-02-12 13:42:45,669 - modules.x_bot - WARNING - X bot will run in mock mode
+2026-02-12 13:42:45,669 - __main__ - INFO - Job Automation Bot initialized successfully
+2026-02-12 13:42:45,669 - __main__ - INFO - Starting Gmail cold email campaign
+2026-02-12 13:42:45,669 - modules.gmail_bot - WARNING - Recipients file not found: config/recipients.csv
+2026-02-12 13:42:45,669 - modules.gmail_bot - WARNING - No recipients to send emails to
+2026-02-12 13:42:45,669 - __main__ - INFO - Gmail campaign completed: {'emails_sent': 0, 'emails_failed': 0}

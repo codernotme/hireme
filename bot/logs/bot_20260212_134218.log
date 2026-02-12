@@ -1,0 +1,7 @@
+2026-02-12 13:42:18,289 - config.settings - INFO - Configuration loaded from /home/codernotme/Projects/Github/hireme/bot/config/config.yaml
+2026-02-12 13:42:18,289 - modules.ollama_ai - INFO - Initialized Ollama with model: llama2
+2026-02-12 13:42:18,634 - modules.x_bot - ERROR - X authentication failed: 401 Unauthorized
+Unauthorized
+2026-02-12 13:42:18,634 - modules.x_bot - WARNING - X bot will run in mock mode
+2026-02-12 13:42:18,634 - __main__ - INFO - Job Automation Bot initialized successfully
+2026-02-12 13:42:18,635 - __main__ - INFO - Daily report saved to logs/report_2026-02-12.json
