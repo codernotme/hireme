@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { env } from "@/config/env.server";
+import { logBackend } from "@/lib/console-log";
 
 export const runtime = "nodejs";
 
@@ -35,6 +36,10 @@ const tryParseJson = (value: string) => {
 };
 
 const callOllama = async (text: string, baseUrl: string, model: string) => {
+  logBackend(
+    "info",
+    `Resume parse: Ollama extract start (model=${model}, chars=${text.length}).`,
+  );
   const prompt = `Extract resume details as JSON with keys: name, email, phone, title, linkedin, portfolio, github, skills, experience, education. Use empty string when unknown. Resume text:\n\n${text}`;
 
   const response = await fetch(`${baseUrl}/api/generate`, {
@@ -49,15 +54,19 @@ const callOllama = async (text: string, baseUrl: string, model: string) => {
   });
 
   if (!response.ok) {
+    logBackend("error", `Resume parse: Ollama failed (${response.status}).`);
     throw new Error("Ollama request failed");
   }
 
   const data = (await response.json()) as { response?: string };
 
-  return tryParseJson(data.response ?? "");
+  const parsed = tryParseJson(data.response ?? "");
+  logBackend("info", "Resume parse: Ollama extract completed.");
+  return parsed;
 };
 
 export async function POST(request: Request) {
+  logBackend("info", "Resume parse requested.");
   const { default: pdfParse } = await import("pdf-parse/lib/pdf-parse");
   const formData = await request.formData();
   const file = formData.get("file");
@@ -65,6 +74,7 @@ export async function POST(request: Request) {
   const model = String(formData.get("ollamaModel") || "llama2");
 
   if (!(file instanceof File)) {
+    logBackend("warn", "Resume parse aborted: no file uploaded.");
     return NextResponse.json(
       { ok: false, error: "No file uploaded" },
       { status: 400 },
@@ -72,11 +82,17 @@ export async function POST(request: Request) {
   }
 
   if (file.size > MAX_BYTES) {
+    logBackend("warn", `Resume parse aborted: file too large (${file.size}).`);
     return NextResponse.json(
       { ok: false, error: "File too large (max 6MB)." },
       { status: 400 },
     );
   }
+
+  logBackend(
+    "info",
+    `Resume parse processing file ${file.name || "(unnamed)"} (${file.size} bytes).`,
+  );
 
   const buffer = Buffer.from(await file.arrayBuffer());
   let text = "";
@@ -94,6 +110,7 @@ export async function POST(request: Request) {
   text = sanitize(text);
 
   if (!text) {
+    logBackend("warn", "Resume parse aborted: no readable text extracted.");
     return NextResponse.json(
       { ok: false, error: "Unable to read resume text" },
       { status: 400 },
@@ -107,11 +124,13 @@ export async function POST(request: Request) {
   try {
     aiData = await callOllama(text.slice(0, 4000), baseUrl, model);
   } catch {
+    logBackend("warn", "Resume parse: falling back to heuristic extraction.");
     aiData = null;
   }
 
   const normalized = aiData ?? {};
 
+  logBackend("info", "Resume parse completed.");
   return NextResponse.json({
     ok: true,
     data: {

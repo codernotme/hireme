@@ -44,6 +44,9 @@ const defaultForm = {
   linkedinMessageLong: "",
   linkedinPersonaPack: "",
   linkedinHeadless: false,
+  linkedinAllowManualVerification: false,
+  linkedinManualVerificationTimeout: "180",
+  linkedinManualVerificationPoll: "5",
   gmailEmail: "",
   gmailAppPassword: "",
   gmailRecipientsCsv: "config/recipients.csv",
@@ -772,6 +775,24 @@ export default function OnboardingPage() {
           >
             Headless mode
           </Switch>
+          <Switch
+            isSelected={form.linkedinAllowManualVerification}
+            onValueChange={(value) => update("linkedinAllowManualVerification", value)}
+          >
+            Allow manual verification
+          </Switch>
+          <Input
+            label="Manual verification timeout (seconds)"
+            value={form.linkedinManualVerificationTimeout}
+            onValueChange={(value) =>
+              update("linkedinManualVerificationTimeout", value)
+            }
+          />
+          <Input
+            label="Manual verification poll interval (seconds)"
+            value={form.linkedinManualVerificationPoll}
+            onValueChange={(value) => update("linkedinManualVerificationPoll", value)}
+          />
           <Input
             label="Target roles (comma-separated)"
             value={form.linkedinTargetRoles}
@@ -818,8 +839,11 @@ export default function OnboardingPage() {
             onValueChange={(value) => update("linkedinBackground", value)}
           />
           <div className="flex flex-col gap-2 md:col-span-3">
-            <label className="text-sm font-medium">Message template</label>
+            <label className="text-sm font-medium" htmlFor="linkedin-message-template">
+              Message template
+            </label>
             <textarea
+              id="linkedin-message-template"
               className="min-h-[120px] w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
               placeholder="Hi {name}, I noticed your work in {industry}..."
               value={form.linkedinMessageTemplate}
@@ -847,7 +871,9 @@ export default function OnboardingPage() {
             onValueChange={(value) => update("linkedinPersonaPack", value)}
           />
           <div className="flex flex-col gap-2 md:col-span-3">
-            <label className="text-sm font-medium">Message variants</label>
+            <label className="text-sm font-medium" htmlFor="linkedin-message-short">
+              Message variants
+            </label>
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 color="secondary"
@@ -866,6 +892,7 @@ export default function OnboardingPage() {
               ) : null}
             </div>
             <textarea
+              id="linkedin-message-short"
               className="min-h-[100px] w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
               placeholder="Short variant"
               value={form.linkedinMessageShort}

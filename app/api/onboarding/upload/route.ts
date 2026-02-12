@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
+import { logBackend } from "@/lib/console-log";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,7 @@ const sanitizeName = (value: string) =>
   value.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
 
 export async function POST(request: Request) {
+  logBackend("info", "File upload requested.");
   const formData = await request.formData();
   const kind = String(formData.get("kind") || "uploads").toLowerCase();
   const files = formData.getAll("files");
@@ -20,11 +22,17 @@ export async function POST(request: Request) {
   );
 
   if (!allFiles.length) {
+    logBackend("warn", "Upload aborted: no files provided.");
     return NextResponse.json(
       { ok: false, error: "No files uploaded" },
       { status: 400 },
     );
   }
+
+  logBackend(
+    "info",
+    `Upload received (${allFiles.length} file(s), kind=${kind}).`,
+  );
 
   const baseDir = path.resolve(process.cwd(), "bot", "uploads", kind);
   await fs.mkdir(baseDir, { recursive: true });
@@ -33,6 +41,10 @@ export async function POST(request: Request) {
 
   for (const file of allFiles) {
     if (file.size > MAX_BYTES) {
+      logBackend(
+        "warn",
+        `Upload aborted: ${file.name || "(unnamed)"} too large (${file.size}).`,
+      );
       return NextResponse.json(
         { ok: false, error: "File too large (max 10MB)." },
         { status: 400 },
@@ -44,9 +56,11 @@ export async function POST(request: Request) {
     const uniqueName = `${Date.now()}-${crypto.randomUUID()}-${safeName}`;
     const targetPath = path.join(baseDir, uniqueName);
 
-    await fs.writeFile(targetPath, buffer);
+    await fs.writeFile(targetPath, new Uint8Array(buffer));
     savedPaths.push(targetPath);
+    logBackend("info", `Upload saved: ${targetPath}.`);
   }
 
+  logBackend("info", `Upload completed (${savedPaths.length} file(s)).`);
   return NextResponse.json({ ok: true, paths: savedPaths });
 }

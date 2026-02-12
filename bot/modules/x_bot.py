@@ -29,6 +29,21 @@ class XBot:
     
     def _authenticate(self):
         """Authenticate with X API"""
+        required_keys = [
+            'api_key',
+            'api_secret',
+            'access_token',
+            'access_token_secret',
+            'bearer_token',
+        ]
+        missing = [key for key in required_keys if not self.config.get(key)]
+        if missing:
+            self.logger.warning(
+                "X credentials missing (%s). X bot will run in mock mode.",
+                ", ".join(missing),
+            )
+            return
+
         try:
             # X API v2 authentication
             self.client = tweepy.Client(
@@ -56,6 +71,8 @@ class XBot:
         except Exception as e:
             self.logger.error(f"X authentication failed: {e}")
             self.logger.warning("X bot will run in mock mode")
+            self.client = None
+            self.api = None
     
     def post_job_search_updates(self) -> Dict:
         """Post engaging content about job search"""

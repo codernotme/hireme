@@ -6,6 +6,7 @@ import { Snippet } from "@heroui/snippet";
 
 import { BotRunner } from "@/components/bot-runner";
 import { BotStatus } from "@/components/bot-status";
+import { BackendConsole } from "@/components/backend-console";
 import { title, subtitle } from "@/components/primitives";
 import { siteConfig } from "@/config/site";
 
@@ -159,6 +160,8 @@ export default function Home() {
           </CardBody>
         </Card>
       </div>
+
+      <BackendConsole />
     </section>
   );
 }

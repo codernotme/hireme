@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 
 import { env } from "@/config/env.server";
+import { logBackend } from "@/lib/console-log";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,10 @@ export async function POST(request: Request) {
   const payload = await request.json().catch(() => ({}));
   const mode = typeof payload?.mode === "string" ? payload.mode : "";
 
+  logBackend("info", `Bot run requested (mode=${mode || "unknown"}).`);
+
   if (!ALLOWED_MODES.has(mode)) {
+    logBackend("warn", `Bot run rejected due to invalid mode: ${mode || "-"}.`);
     return NextResponse.json(
       { ok: false, error: "Invalid mode" },
       { status: 400 },
@@ -40,6 +44,7 @@ export async function POST(request: Request) {
   try {
     await fs.access(scriptPath);
   } catch (error) {
+    logBackend("error", `Python bot not found at ${scriptPath}.`);
     return NextResponse.json(
       { ok: false, error: "Python bot not found", details: String(error) },
       { status: 500 },
@@ -58,24 +63,61 @@ export async function POST(request: Request) {
     args.push("--config", configPath);
   }
 
-  return new Promise((resolve) => {
+  logBackend("info", `Spawning bot: ${env.botPython} ${args.join(" ")}`);
+
+  return new Promise<Response>((resolve) => {
     const child = spawn(env.botPython, args, {
       cwd: workdir,
       env: process.env,
     });
 
+    let stdoutRemainder = "";
+    let stderrRemainder = "";
+
+    const emitLines = (chunk: string, source: "stdout" | "stderr") => {
+      const combined = source === "stdout" ? stdoutRemainder + chunk : stderrRemainder + chunk;
+      const lines = combined.split(/\r?\n/);
+      const remainder = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (line.trim()) {
+          logBackend(
+            source === "stdout" ? "info" : "error",
+            `bot:${source} ${line}`,
+          );
+        }
+      }
+
+      if (source === "stdout") {
+        stdoutRemainder = remainder;
+      } else {
+        stderrRemainder = remainder;
+      }
+    };
+
     let stdout = "";
     let stderr = "";
 
     child.stdout.on("data", (data) => {
-      stdout += data.toString();
+      const chunk = data.toString();
+      stdout += chunk;
+      emitLines(chunk, "stdout");
     });
 
     child.stderr.on("data", (data) => {
-      stderr += data.toString();
+      const chunk = data.toString();
+      stderr += chunk;
+      emitLines(chunk, "stderr");
     });
 
     child.on("close", (code) => {
+      if (stdoutRemainder.trim()) {
+        logBackend("info", `bot:stdout ${stdoutRemainder}`);
+      }
+      if (stderrRemainder.trim()) {
+        logBackend("error", `bot:stderr ${stderrRemainder}`);
+      }
+      logBackend("info", `Bot process exited with code ${code ?? "unknown"}.`);
       resolve(
         NextResponse.json({
           ok: code === 0,
@@ -87,6 +129,7 @@ export async function POST(request: Request) {
     });
 
     child.on("error", (error) => {
+      logBackend("error", `Bot process failed to start: ${String(error)}`);
       resolve(
         NextResponse.json(
           {

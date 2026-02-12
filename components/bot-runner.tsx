@@ -103,6 +103,23 @@ export const BotRunner = () => {
           ? "Failed"
           : "Idle";
 
+  const runHint = (() => {
+    if (!result || result.ok) {
+      return null;
+    }
+
+    const combined = `${result.output}\n${result.errorOutput}`;
+
+    if (combined.includes("LinkedIn verification required")) {
+      return {
+        title: "LinkedIn needs manual verification",
+        body: "Open onboarding, disable headless mode, and enable manual verification to complete 2FA in the browser window.",
+      };
+    }
+
+    return null;
+  })();
+
   return (
     <Card className="border border-default-200/60 bg-background/80">
       <CardHeader className="flex flex-col items-start gap-2">
@@ -170,6 +187,12 @@ export const BotRunner = () => {
             Ready to run. Output will appear here.
           </Snippet>
         )}
+        {runHint ? (
+          <div className="rounded-xl border border-warning-200/60 bg-warning-50 px-4 py-3 text-sm text-warning-700">
+            <p className="font-semibold">{runHint.title}</p>
+            <p>{runHint.body}</p>
+          </div>
+        ) : null}
       </CardBody>
     </Card>
   );

@@ -5,6 +5,7 @@ Handles LinkedIn connection requests, messaging, and outreach
 
 import time
 import logging
+import sys
 from typing import Dict, List, Optional
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -90,16 +91,22 @@ class LinkedInBot:
         """Login to LinkedIn"""
         if not self.driver:
             self._setup_driver()
+
+        email = self.config.get('email')
+        password = self.config.get('password')
+        if not email or not password:
+            self.logger.error("LinkedIn credentials missing. Update config.linkedin.email/password.")
+            raise RuntimeError("LinkedIn credentials missing")
         
         try:
             self.driver.get('https://www.linkedin.com/login')
             
             # Login
             email_field = self.wait.until(EC.presence_of_element_located((By.ID, 'username')))
-            email_field.send_keys(self.config['email'])
+            email_field.send_keys(email)
             
             password_field = self.driver.find_element(By.ID, 'password')
-            password_field.send_keys(self.config['password'])
+            password_field.send_keys(password)
             
             login_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
             login_button.click()
@@ -109,8 +116,35 @@ class LinkedInBot:
             
             # Check if 2FA or verification needed
             if 'checkpoint' in self.driver.current_url or 'challenge' in self.driver.current_url:
-                self.logger.warning("LinkedIn verification required. Please complete manually.")
-                input("Press Enter after completing verification...")
+                allow_manual = bool(self.config.get('allow_manual_verification', False))
+                if not allow_manual:
+                    raise RuntimeError(
+                        "LinkedIn verification required. Set allow_manual_verification: true and headless: false "
+                        "to complete the check in the browser window."
+                    )
+
+                if self.config.get('headless', False):
+                    raise RuntimeError(
+                        "LinkedIn verification required, but headless mode is enabled. Set headless: false "
+                        "to complete the check in the browser window."
+                    )
+
+                timeout_seconds = int(self.config.get('manual_verification_timeout_seconds', 180))
+                poll_seconds = int(self.config.get('manual_verification_poll_seconds', 5))
+                self.logger.warning(
+                    "LinkedIn verification required. Waiting up to %ss for manual completion...",
+                    timeout_seconds,
+                )
+
+                deadline = time.time() + timeout_seconds
+                while time.time() < deadline:
+                    if 'checkpoint' not in self.driver.current_url and 'challenge' not in self.driver.current_url:
+                        break
+                    time.sleep(poll_seconds)
+                else:
+                    raise RuntimeError(
+                        "LinkedIn verification timed out. Please complete the check and retry."
+                    )
             
             self.logger.info("Successfully logged into LinkedIn")
             

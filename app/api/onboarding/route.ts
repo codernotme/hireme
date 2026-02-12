@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import yaml from "js-yaml";
+import { logBackend } from "@/lib/console-log";
 
 const toCsvArray = (value: string | undefined, fallback: string[]) => {
   if (!value) {
@@ -17,6 +18,7 @@ const toCsvArray = (value: string | undefined, fallback: string[]) => {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  logBackend("info", "Onboarding config save requested.");
   const payload = (await request.json().catch(() => ({}))) as Record<
     string,
     unknown
@@ -45,6 +47,15 @@ export async function POST(request: Request) {
       email: String(payload.linkedinEmail ?? ""),
       password: String(payload.linkedinPassword ?? ""),
       headless: Boolean(payload.linkedinHeadless ?? false),
+      allow_manual_verification: Boolean(
+        payload.linkedinAllowManualVerification ?? false,
+      ),
+      manual_verification_timeout_seconds: Number(
+        payload.linkedinManualVerificationTimeout ?? 180,
+      ),
+      manual_verification_poll_seconds: Number(
+        payload.linkedinManualVerificationPoll ?? 5,
+      ),
       target_roles: toCsvArray(String(payload.linkedinTargetRoles ?? ""), [
         "HR Manager",
         "Technical Recruiter",
@@ -146,6 +157,8 @@ export async function POST(request: Request) {
 
   await fs.mkdir(path.dirname(configPath), { recursive: true });
   await fs.writeFile(configPath, yaml.dump(config, { sortKeys: false }));
+
+  logBackend("info", `Onboarding config saved to ${configPath}.`);
 
   return NextResponse.json({ ok: true, path: configPath });
 }

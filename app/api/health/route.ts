@@ -3,10 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { env } from "@/config/env.server";
+import { logBackend } from "@/lib/console-log";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  logBackend("debug", "Health check requested.");
   const workdir = path.resolve(process.cwd(), env.botWorkdir);
   const configPath = path.isAbsolute(env.botConfigPath)
     ? env.botConfigPath

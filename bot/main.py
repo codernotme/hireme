@@ -107,15 +107,28 @@ class JobAutomationBot:
     def run_full_campaign(self):
         """Run complete automation across all platforms"""
         self.logger.info("Starting full automation campaign")
-        
+
         results = {
-            'linkedin': self.run_linkedin_outreach(),
-            'gmail': self.run_gmail_campaign(),
-            'x': self.run_x_engagement(),
-            'job_platforms': self.run_job_applications()
+            'linkedin': None,
+            'gmail': None,
+            'x': None,
+            'job_platforms': None,
+            'errors': {}
         }
-        
-        self.logger.info("Full campaign completed successfully")
+
+        for key, runner in [
+            ('linkedin', self.run_linkedin_outreach),
+            ('gmail', self.run_gmail_campaign),
+            ('x', self.run_x_engagement),
+            ('job_platforms', self.run_job_applications),
+        ]:
+            try:
+                results[key] = runner()
+            except Exception as e:
+                self.logger.error(f"{key} task failed: {e}")
+                results['errors'][key] = str(e)
+
+        self.logger.info("Full campaign completed")
         return results
     
     def generate_daily_report(self):
