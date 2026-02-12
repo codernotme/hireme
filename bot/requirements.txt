@@ -1,0 +1,24 @@
+# Job Automation Bot - Python Dependencies
+
+# Core dependencies
+pyyaml>=6.0
+requests>=2.31.0
+
+# Web automation
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# Social media APIs
+tweepy>=4.14.0
+
+# AI/ML
+# Note: Ollama runs separately, we just use its API
+
+# Utilities
+python-dateutil>=2.8.2
+pytz>=2023.3
+
+# Optional: For enhanced features
+# beautifulsoup4>=4.12.0  # For web scraping
+# pandas>=2.1.0  # For data analysis
+# schedule>=1.2.0  # For scheduling tasks
