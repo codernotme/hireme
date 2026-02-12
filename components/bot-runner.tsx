@@ -117,6 +117,16 @@ export const BotRunner = () => {
       };
     }
 
+    if (
+      combined.includes("Ollama generation failed") ||
+      combined.includes("/api/generate")
+    ) {
+      return {
+        title: "Ollama is not reachable",
+        body: "Start the Ollama server and confirm the base URL in onboarding. The default is http://localhost:11434.",
+      };
+    }
+
     return null;
   })();
 

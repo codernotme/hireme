@@ -1,0 +1,108 @@
+ollama:
+  base_url: http://localhost:11434
+  model: llama2
+  temperature: 0.7
+user_profile:
+  name: Your Name
+  email: your.email@gmail.com
+  phone: '+1234567890'
+  title: Software Developer
+  linkedin: https://linkedin.com/in/yourprofile
+  portfolio: https://yourportfolio.com
+  github: https://github.com/yourusername
+  skills: Python, JavaScript, React, Node.js, Docker
+  experience: 3+ years in full-stack development
+  education: B.Tech in Computer Science
+  resume_path: /path/to/your/resume.pdf
+linkedin:
+  email: your.linkedin.email@gmail.com
+  password: your_linkedin_password
+  headless: false
+  target_roles:
+  - HR Manager
+  - Technical Recruiter
+  - Talent Acquisition
+  target_tags: []
+  target_industry: Technology
+  job_titles:
+  - Software Engineer
+  - Python Developer
+  - Full Stack Developer
+  daily_connection_limit: 20
+  daily_message_limit: 10
+  daily_application_limit: 15
+  max_connections_per_search: 10
+  my_background: Experienced software developer passionate about building scalable
+    applications
+  message_template: ''
+  message_tags: []
+  message_image_paths: []
+  persona_pack: ''
+  export_emails_to_csv: false
+  export_emails_csv_path: config/recipients.csv
+  message_variants:
+    short: ''
+    medium: ''
+    long: ''
+gmail:
+  email: your.gmail@gmail.com
+  app_password: your_gmail_app_password
+  recipients_csv: config/recipients.csv
+  linkedin_recipients_csv: ''
+  google_contacts_csv: ''
+  additional_recipient_csvs: []
+  daily_email_limit: 50
+  delay_between_emails: 60
+  my_name: Your Name
+  my_title: Software Developer
+  my_phone: '+1234567890'
+  my_linkedin: https://linkedin.com/in/yourprofile
+  my_portfolio: https://yourportfolio.com
+  my_skills: Python, React, Node.js, AWS
+  my_experience: 3+ years building web applications
+  message_subject: ''
+  message_body: ''
+  personalize_custom_message: true
+  use_multi_model: false
+  multi_models: []
+  attachment_paths: []
+  resume_path: ''
+  auto_attach_resume: true
+  target_tags: []
+x_twitter:
+  api_key: your_x_api_key
+  api_secret: your_x_api_secret
+  access_token: your_x_access_token
+  access_token_secret: your_x_access_token_secret
+  bearer_token: your_x_bearer_token
+  daily_post_limit: 3
+  daily_engagement_limit: 20
+  delay_between_posts: 3600
+  auto_reply: false
+  post_schedule:
+  - 09:00
+  - '13:00'
+  - '18:00'
+  recruiters_to_follow: []
+job_platforms:
+  headless: false
+  daily_application_limit: 15
+  unstop_email: your.unstop.email@gmail.com
+  unstop_password: your_unstop_password
+  naukri_email: your.naukri.email@gmail.com
+  naukri_password: your_naukri_password
+  internshala_email: your.internshala.email@gmail.com
+  internshala_password: your_internshala_password
+  job_keywords:
+  - Python Developer
+  - Software Engineer
+  - Full Stack Developer
+  preferred_location: Remote
+  job_category: Software Development
+  my_name: Your Name
+  my_email: your.email@gmail.com
+  my_phone: '+1234567890'
+  my_skills: Python, JavaScript, React
+  my_experience: 3 years
+  my_education: B.Tech Computer Science
+  resume_path: /path/to/resume.pdf

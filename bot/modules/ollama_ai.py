@@ -14,33 +14,48 @@ class OllamaAI:
     def __init__(self, config: Dict):
         self.base_url = config.get('base_url', 'http://localhost:11434')
         self.model = config.get('model', 'llama2')
+        self.fallback_models = config.get('fallback_models', []) or []
         self.logger = logging.getLogger(__name__)
         self.logger.info(f"Initialized Ollama with model: {self.model}")
     
+    def _generate_with_model(
+        self,
+        prompt: str,
+        model: str,
+        system_prompt: str = None,
+        temperature: float = 0.7,
+    ) -> str:
+        """Generate text using a specific Ollama model."""
+        url = f"{self.base_url}/api/generate"
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "temperature": temperature,
+            "stream": False,
+        }
+
+        if system_prompt:
+            payload["system"] = system_prompt
+
+        response = requests.post(url, json=payload, timeout=60)
+        response.raise_for_status()
+
+        result = response.json()
+        return result.get('response', '').strip()
+
     def _generate(self, prompt: str, system_prompt: str = None, temperature: float = 0.7) -> str:
         """Generate text using Ollama API"""
-        try:
-            url = f"{self.base_url}/api/generate"
-            
-            payload = {
-                "model": self.model,
-                "prompt": prompt,
-                "temperature": temperature,
-                "stream": False
-            }
-            
-            if system_prompt:
-                payload["system"] = system_prompt
-            
-            response = requests.post(url, json=payload, timeout=60)
-            response.raise_for_status()
-            
-            result = response.json()
-            return result.get('response', '').strip()
-        
-        except Exception as e:
-            self.logger.error(f"Ollama generation failed: {e}")
-            raise
+        models_to_try = [self.model, *self.fallback_models]
+        last_error: Optional[Exception] = None
+
+        for model in models_to_try:
+            try:
+                return self._generate_with_model(prompt, model, system_prompt, temperature)
+            except Exception as e:
+                last_error = e
+                self.logger.error(f"Ollama generation failed (model={model}): {e}")
+
+        raise last_error if last_error else RuntimeError("Ollama generation failed")
     
     def generate_linkedin_message(self, recipient_info: Dict) -> str:
         """Generate personalized LinkedIn connection message"""
@@ -109,6 +124,62 @@ BODY:
             'subject': subject,
             'body': body
         }
+
+    def generate_cold_email_candidates(
+        self,
+        recipient_info: Dict,
+        models: Optional[List[str]] = None,
+        temperature: Optional[float] = None,
+    ) -> List[Dict[str, str]]:
+        """Generate multiple cold email candidates across models."""
+        system_prompt = """You are an expert at writing professional cold emails for job seeking.
+        Write compelling, personalized emails that get responses. Be concise and action-oriented."""
+
+        prompt = f"""Generate a cold email for job opportunities:
+
+Recipient: {recipient_info.get('name', 'Hiring Manager')}
+Company: {recipient_info.get('company', 'Unknown')}
+Position Type: {recipient_info.get('position_type', 'Software Engineering')}
+
+My Skills: {recipient_info.get('my_skills', 'Full-stack development, Python, React')}
+My Experience: {recipient_info.get('my_experience', '2+ years in software development')}
+
+Generate:
+1. Subject line (under 60 characters)
+2. Email body (under 300 words)
+
+Format as:
+SUBJECT: [subject line]
+BODY:
+[email body]"""
+
+        temperature_value = temperature if temperature is not None else 0.8
+        models_to_use = models or [self.model, *self.fallback_models]
+        candidates: List[Dict[str, str]] = []
+
+        for model in models_to_use:
+            try:
+                result = self._generate_with_model(
+                    prompt,
+                    model,
+                    system_prompt,
+                    temperature_value,
+                )
+
+                parts = result.split('BODY:', 1)
+                subject = parts[0].replace('SUBJECT:', '').strip()
+                body = parts[1].strip() if len(parts) > 1 else result
+
+                if subject or body:
+                    candidates.append({
+                        'subject': subject,
+                        'body': body,
+                        'model': model,
+                    })
+            except Exception as e:
+                self.logger.error(f"Ollama candidate generation failed (model={model}): {e}")
+
+        return candidates
     
     def generate_x_post(self, topic: str = "job search") -> str:
         """Generate engaging X (Twitter) post about job search"""

@@ -6,6 +6,8 @@ Handles LinkedIn connection requests, messaging, and outreach
 import time
 import logging
 import sys
+import csv
+from pathlib import Path
 from typing import Dict, List, Optional
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -23,6 +25,9 @@ class LinkedInBot:
         self.ai = ai_engine
         self.logger = logging.getLogger(__name__)
         self.driver = None
+        self.ai_enabled = True
+        self.ai_error_logged = False
+        self.exported_emails = set()
         self.stats = {
             'connections_sent': 0,
             'messages_sent': 0,
@@ -40,6 +45,25 @@ class LinkedInBot:
             ordered.append(cleaned)
         return ordered
 
+    def _normalize_tags(self, tags: object) -> List[str]:
+        if isinstance(tags, list):
+            return [str(tag).strip() for tag in tags if str(tag).strip()]
+        if isinstance(tags, str):
+            return [tag.strip() for tag in tags.split(',') if tag.strip()]
+        return []
+
+    def _matches_tags(self, text: str, tags: List[str], mode: str) -> List[str]:
+        if not tags or mode == 'keywords':
+            return tags
+
+        text_lower = text.lower()
+        matched = [tag for tag in tags if tag.lower() in text_lower]
+
+        if mode == 'all':
+            return matched if len(matched) == len(tags) else []
+
+        return matched
+
     def _build_message(self, recipient_info: Dict) -> str:
         template = self.config.get('message_template', '').strip()
         message_tags = self.config.get('message_tags', [])
@@ -55,7 +79,25 @@ class LinkedInBot:
                 self.logger.warning(f"Failed to personalize template: {e}")
                 return template
 
-        return self.ai.generate_linkedin_message(recipient_info)
+        if self.ai_enabled:
+            try:
+                return self.ai.generate_linkedin_message(recipient_info)
+            except Exception as e:
+                if not self.ai_error_logged:
+                    self.logger.warning(
+                        "AI generation unavailable, falling back to a default message: %s",
+                        e,
+                    )
+                    self.ai_error_logged = True
+                self.ai_enabled = False
+
+        name = recipient_info.get('name') or "there"
+        interest = recipient_info.get('my_interest', 'exploring opportunities')
+        background = recipient_info.get('my_background', '').strip()
+        fallback = f"Hi {name}, I'm reaching out about {interest}."
+        if background:
+            fallback = f"{fallback} {background}"
+        return fallback[:300]
 
     def _attach_images(self, image_paths: List[str]) -> None:
         if not image_paths:
@@ -69,6 +111,111 @@ class LinkedInBot:
             self.logger.warning("No attachment input found for LinkedIn message")
         except Exception as e:
             self.logger.warning(f"Failed to attach images: {e}")
+
+    def _attach_files(self, file_paths: List[str], label: str) -> None:
+        if not file_paths:
+            return
+
+        paths = []
+        for file_path in file_paths:
+            if not file_path:
+                continue
+            path = Path(file_path).expanduser()
+            if not path.exists():
+                self.logger.warning(f"{label} not found: {file_path}")
+                continue
+            paths.append(str(path.resolve()))
+
+        if not paths:
+            return
+
+        try:
+            file_input = None
+            try:
+                file_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="file"]')
+            except NoSuchElementException:
+                pass
+
+            if not file_input:
+                try:
+                    attach_button = self.driver.find_element(
+                        By.CSS_SELECTOR,
+                        'button[aria-label*="Attach"], button[aria-label*="attach"]'
+                    )
+                    attach_button.click()
+                    time.sleep(1)
+                    file_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="file"]')
+                except NoSuchElementException:
+                    self.logger.warning(f"No attachment input found for {label}")
+                    return
+
+            file_input.send_keys("\n".join(paths))
+            time.sleep(2)
+        except Exception as e:
+            self.logger.warning(f"Failed to attach {label}: {e}")
+
+    def _extract_profile_email(self) -> str:
+        try:
+            try:
+                contact_button = self.driver.find_element(
+                    By.CSS_SELECTOR,
+                    'a[data-control-name="contact_see_more"], a[href*="contact-info"], button[aria-label*="Contact"]'
+                )
+                contact_button.click()
+                time.sleep(1)
+            except NoSuchElementException:
+                pass
+
+            email_link = self.driver.find_element(By.CSS_SELECTOR, 'a[href^="mailto:"]')
+            href = email_link.get_attribute('href')
+            email = href.replace('mailto:', '').split('?')[0].strip()
+
+            try:
+                close_button = self.driver.find_element(
+                    By.CSS_SELECTOR,
+                    'button[aria-label="Dismiss"], button[aria-label="Close"]'
+                )
+                close_button.click()
+            except NoSuchElementException:
+                pass
+
+            return email
+        except Exception:
+            return ""
+
+    def _export_email(self, profile: Dict, matched_tags: List[str]) -> None:
+        if not self.config.get('export_emails_to_csv', False):
+            return
+
+        email = profile.get('email')
+        if not email or email in self.exported_emails:
+            return
+
+        export_path = self.config.get('export_emails_csv_path', 'config/recipients.csv')
+        path = Path(export_path).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        headers = ['name', 'email', 'title', 'company', 'position_type', 'tags', 'source']
+        row = {
+            'name': profile.get('name', ''),
+            'email': email,
+            'title': profile.get('title', ''),
+            'company': profile.get('company', ''),
+            'position_type': profile.get('position_type', ''),
+            'tags': ", ".join(matched_tags),
+            'source': 'linkedin',
+        }
+
+        try:
+            file_exists = path.exists()
+            with open(path, 'a', newline='', encoding='utf-8') as file:
+                writer = csv.DictWriter(file, fieldnames=headers)
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow(row)
+            self.exported_emails.add(email)
+        except Exception as e:
+            self.logger.warning(f"Failed to export email to {path}: {e}")
     
     def _setup_driver(self):
         """Initialize Selenium WebDriver"""
@@ -155,6 +302,8 @@ class LinkedInBot:
     def search_people(self, keywords: List[str], filters: Dict = None) -> List[Dict]:
         """Search for people on LinkedIn"""
         results = []
+        tag_match_mode = str(self.config.get('tag_match_mode', 'any')).lower()
+        target_tags = self._normalize_tags(self.config.get('target_tags', []))
         
         for keyword in keywords:
             try:
@@ -184,11 +333,17 @@ class LinkedInBot:
                         
                         title_elem = profile.find_element(By.CSS_SELECTOR, '.entity-result__primary-subtitle')
                         title = title_elem.text
+
+                        search_text = f"{name} {title}".strip()
+                        matched_tags = self._matches_tags(search_text, target_tags, tag_match_mode)
+                        if target_tags and not matched_tags and tag_match_mode != 'keywords':
+                            continue
                         
                         results.append({
                             'name': name,
                             'title': title,
                             'url': profile_url,
+                            'matched_tags': matched_tags,
                             'keyword': keyword
                         })
                     
@@ -219,6 +374,7 @@ class LinkedInBot:
         
         for person in people:
             try:
+                matched_tags = person.get('matched_tags', [])
                 # Generate personalized message
                 recipient_info = {
                     'name': person['name'],
@@ -232,6 +388,18 @@ class LinkedInBot:
                 # Visit profile
                 self.driver.get(person['url'])
                 time.sleep(3)
+
+                email = self._extract_profile_email()
+                if email:
+                    self._export_email(
+                        {
+                            'name': person.get('name', ''),
+                            'title': person.get('title', ''),
+                            'email': email,
+                            'position_type': person.get('keyword', ''),
+                        },
+                        matched_tags,
+                    )
                 
                 # Click Connect button
                 try:
@@ -281,6 +449,10 @@ class LinkedInBot:
     
     def send_messages(self, message_list: List[Dict] = None):
         """Send messages to existing connections"""
+        if not self.config.get('message_existing_connections', False):
+            self.logger.info("Skipping existing connection messaging (disabled in config)")
+            return
+
         try:
             self.driver.get('https://www.linkedin.com/messaging/')
             time.sleep(3)
@@ -309,6 +481,10 @@ class LinkedInBot:
 
                     image_paths = self.config.get('message_image_paths', [])
                     self._attach_images(image_paths)
+
+                    if self.config.get('attach_resume', False):
+                        resume_path = self.config.get('resume_path', '')
+                        self._attach_files([resume_path], "resume")
                     
                     send_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
                     send_button.click()

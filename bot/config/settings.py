@@ -83,6 +83,8 @@ class Settings:
                 'message_tags': [],
                 'message_image_paths': [],
                 'persona_pack': '',
+                'export_emails_to_csv': False,
+                'export_emails_csv_path': 'config/recipients.csv',
                 'message_variants': {
                     'short': '',
                     'medium': '',
@@ -94,6 +96,9 @@ class Settings:
                 'email': 'your.gmail@gmail.com',
                 'app_password': 'your_gmail_app_password',  # Use App Password, not regular password
                 'recipients_csv': 'config/recipients.csv',
+                'linkedin_recipients_csv': '',
+                'google_contacts_csv': '',
+                'additional_recipient_csvs': [],
                 'daily_email_limit': 50,
                 'delay_between_emails': 60,  # seconds
                 'my_name': 'Your Name',
@@ -103,7 +108,14 @@ class Settings:
                 'my_portfolio': 'https://yourportfolio.com',
                 'my_skills': 'Python, React, Node.js, AWS',
                 'my_experience': '3+ years building web applications',
+                'message_subject': '',
+                'message_body': '',
+                'personalize_custom_message': True,
+                'use_multi_model': False,
+                'multi_models': [],
                 'attachment_paths': [],
+                'resume_path': '',
+                'auto_attach_resume': True,
                 'target_tags': []
             },
             

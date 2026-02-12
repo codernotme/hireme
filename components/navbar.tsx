@@ -84,13 +84,13 @@ export const Navbar = () => {
           <GithubIcon className="text-default-500" />
         </Link>
         <ThemeSwitch />
-        <NavbarMenuToggle />
+        <NavbarMenuToggle aria-label="Open menu" />
       </NavbarContent>
 
       <NavbarMenu>
         <div className="mx-4 mt-2 flex flex-col gap-2">
           {siteConfig.navMenuItems.map((item, index) => (
-            <NavbarMenuItem key={`${item}-${index}`}>
+            <NavbarMenuItem key={`${item}-${index}`} textValue={item.label}>
               <Link
                 color={
                   index === 2
@@ -106,7 +106,7 @@ export const Navbar = () => {
               </Link>
             </NavbarMenuItem>
           ))}
-          <NavbarMenuItem>
+          <NavbarMenuItem textValue="Run Bot">
             <Link color="primary" href="/#run" size="lg">
               Run Bot
             </Link>
