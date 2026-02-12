@@ -5,8 +5,8 @@ export const siteConfig = {
   description:
     "Local-first job outreach automation with human review and Ollama-powered personalization.",
   developer: {
-    name: process.env.NEXT_PUBLIC_DEVELOPER_NAME ?? "codernotme",
-    url: process.env.NEXT_PUBLIC_DEVELOPER_URL ?? "https://github.com/codernotme",
+    name: process.env.NEXT_PUBLIC_DEVELOPER_NAME ?? "HireMe",
+    url: process.env.NEXT_PUBLIC_DEVELOPER_URL ?? "https://github.com/yourusername",
   },
   navItems: [
     {
@@ -54,7 +54,7 @@ export const siteConfig = {
   ],
   links: {
     github:
-      process.env.NEXT_PUBLIC_GITHUB_URL ?? "https://github.com/codernotme",
+      process.env.NEXT_PUBLIC_GITHUB_URL ?? "https://github.com/yourusername",
     twitter:
       process.env.NEXT_PUBLIC_TWITTER_URL ?? "https://x.com/intent/tweet",
     docs: process.env.NEXT_PUBLIC_DOCS_URL ?? "/docs",

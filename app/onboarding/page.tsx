@@ -13,20 +13,21 @@ const defaultForm = {
   ollamaBaseUrl: "http://localhost:11434",
   ollamaModel: "llama2",
   ollamaTemperature: "0.7",
-  userName: "codernotme",
+  userName: "",
   userEmail: "",
   userPhone: "",
-  userTitle: "Software Developer",
+  userTitle: "",
   userLinkedin: "",
   userPortfolio: "",
-  userGithub: "https://github.com/codernotme",
-  userSkills: "Python, JavaScript, React, Node.js, Docker",
-  userExperience: "3+ years in full-stack development",
-  userEducation: "B.Tech in Computer Science",
+  userGithub: "",
+  userSkills: "",
+  userExperience: "",
+  userEducation: "",
   resumePath: "",
   linkedinEmail: "",
   linkedinPassword: "",
   linkedinTargetRoles: "HR Manager, Technical Recruiter, Talent Acquisition",
+  linkedinTargetTags: "",
   linkedinTargetIndustry: "Technology",
   linkedinJobTitles: "Software Engineer, Python Developer, Full Stack Developer",
   linkedinDailyConnections: "20",
@@ -35,19 +36,28 @@ const defaultForm = {
   linkedinMaxConnections: "10",
   linkedinBackground:
     "Experienced software developer passionate about building scalable applications",
+  linkedinMessageTemplate: "",
+  linkedinMessageTags: "",
+  linkedinMessageImages: "",
+  linkedinMessageShort: "",
+  linkedinMessageMedium: "",
+  linkedinMessageLong: "",
+  linkedinPersonaPack: "",
   linkedinHeadless: false,
   gmailEmail: "",
   gmailAppPassword: "",
   gmailRecipientsCsv: "config/recipients.csv",
   gmailDailyLimit: "50",
   gmailDelay: "60",
-  gmailName: "codernotme",
-  gmailTitle: "Software Developer",
+  gmailName: "",
+  gmailTitle: "",
   gmailPhone: "",
   gmailLinkedin: "",
   gmailPortfolio: "",
-  gmailSkills: "Python, React, Node.js, AWS",
-  gmailExperience: "3+ years building web applications",
+  gmailSkills: "",
+  gmailExperience: "",
+  gmailAttachments: "",
+  gmailTargetTags: "",
   xApiKey: "",
   xApiSecret: "",
   xAccessToken: "",
@@ -69,16 +79,22 @@ const defaultForm = {
   jobsKeywords: "Python Developer, Software Engineer, Full Stack Developer",
   jobsLocation: "Remote",
   jobsCategory: "Software Development",
-  jobsName: "codernotme",
+  jobsName: "",
   jobsEmail: "",
   jobsPhone: "",
-  jobsSkills: "Python, JavaScript, React",
-  jobsExperience: "3 years",
-  jobsEducation: "B.Tech Computer Science",
+  jobsSkills: "",
+  jobsExperience: "",
+  jobsEducation: "",
   jobsResumePath: "",
 };
 
 type FormState = typeof defaultForm;
+
+type WizardQuestion = {
+  id: string;
+  question: string;
+  options: Array<{ id: string; text: string }>;
+};
 
 export default function OnboardingPage() {
   const [form, setForm] = useState<FormState>(defaultForm);
@@ -91,6 +107,32 @@ export default function OnboardingPage() {
     "idle" | "parsing" | "success" | "error"
   >("idle");
   const [parseMessage, setParseMessage] = useState<string>("");
+  const [resumeUploadStatus, setResumeUploadStatus] = useState<
+    "idle" | "uploading" | "success" | "error"
+  >("idle");
+  const [resumeUploadMessage, setResumeUploadMessage] = useState<string>("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageUploadStatus, setImageUploadStatus] = useState<
+    "idle" | "uploading" | "success" | "error"
+  >("idle");
+  const [imageUploadMessage, setImageUploadMessage] = useState<string>("");
+  const [wizardStatus, setWizardStatus] = useState<
+    "idle" | "loading" | "ready" | "scoring" | "success" | "error"
+  >("idle");
+  const [wizardMessage, setWizardMessage] = useState<string>("");
+  const [wizardQuestions, setWizardQuestions] = useState<WizardQuestion[]>([]);
+  const [wizardAnswers, setWizardAnswers] = useState<Record<string, string>>(
+    {},
+  );
+  const [wizardExplanations, setWizardExplanations] = useState<string[]>([]);
+  const [personaStatus, setPersonaStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [personaMessage, setPersonaMessage] = useState<string>("");
+  const [variantStatus, setVariantStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [variantMessage, setVariantMessage] = useState<string>("");
 
   const update = (key: keyof FormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -208,6 +250,322 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleResumeUpload = async () => {
+    if (!resumeFile) {
+      setResumeUploadStatus("error");
+      setResumeUploadMessage("Please choose a resume file first.");
+
+      return;
+    }
+
+    setResumeUploadStatus("uploading");
+    setResumeUploadMessage("");
+
+    try {
+      const body = new FormData();
+      body.append("kind", "resume");
+      body.append("file", resumeFile);
+
+      const response = await fetch("/api/onboarding/upload", {
+        method: "POST",
+        body,
+      });
+
+      if (!response.ok) {
+        throw new Error("Resume upload failed");
+      }
+
+      const payload = (await response.json()) as {
+        paths?: string[];
+        error?: string;
+      };
+
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+
+      const resumePath = payload.paths?.[0];
+
+      if (resumePath) {
+        update("resumePath", resumePath);
+        update("jobsResumePath", resumePath);
+      }
+
+      setResumeUploadStatus("success");
+      setResumeUploadMessage("Resume saved locally.");
+    } catch (error) {
+      setResumeUploadStatus("error");
+      setResumeUploadMessage(
+        error instanceof Error ? error.message : "Unable to upload resume",
+      );
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFiles.length) {
+      setImageUploadStatus("error");
+      setImageUploadMessage("Please choose image files first.");
+
+      return;
+    }
+
+    setImageUploadStatus("uploading");
+    setImageUploadMessage("");
+
+    try {
+      const body = new FormData();
+      body.append("kind", "images");
+      imageFiles.forEach((file) => body.append("files", file));
+
+      const response = await fetch("/api/onboarding/upload", {
+        method: "POST",
+        body,
+      });
+
+      if (!response.ok) {
+        throw new Error("Image upload failed");
+      }
+
+      const payload = (await response.json()) as {
+        paths?: string[];
+        error?: string;
+      };
+
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+
+      const imagePaths = payload.paths ?? [];
+      const joined = imagePaths.join(", ");
+
+      if (joined) {
+        update("linkedinMessageImages", joined);
+        update("gmailAttachments", joined);
+      }
+
+      setImageUploadStatus("success");
+      setImageUploadMessage("Images saved locally.");
+    } catch (error) {
+      setImageUploadStatus("error");
+      setImageUploadMessage(
+        error instanceof Error ? error.message : "Unable to upload images",
+      );
+    }
+  };
+
+  const getProfileSnapshot = () => ({
+    name: form.userName,
+    title: form.userTitle,
+    skills: form.userSkills,
+    experience: form.userExperience,
+    education: form.userEducation,
+    targetRoles: form.linkedinTargetRoles,
+    targetIndustry: form.linkedinTargetIndustry,
+    jobTitles: form.linkedinJobTitles,
+  });
+
+  const handleWizardStart = async () => {
+    setWizardStatus("loading");
+    setWizardMessage("");
+
+    try {
+      const response = await fetch("/api/onboarding/tag-wizard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "questions",
+          mcqCount: 5,
+          ollamaBaseUrl: form.ollamaBaseUrl,
+          ollamaModel: form.ollamaModel,
+          profile: getProfileSnapshot(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate questions");
+      }
+
+      const payload = (await response.json()) as {
+        questions?: WizardQuestion[];
+        error?: string;
+      };
+
+      if (payload.error || !payload.questions?.length) {
+        throw new Error(payload.error ?? "No questions returned");
+      }
+
+      setWizardQuestions(payload.questions);
+      setWizardAnswers({});
+      setWizardExplanations([]);
+      setWizardStatus("ready");
+    } catch (error) {
+      setWizardStatus("error");
+      setWizardMessage(
+        error instanceof Error ? error.message : "Unable to start wizard",
+      );
+    }
+  };
+
+  const handleWizardScore = async () => {
+    setWizardStatus("scoring");
+    setWizardMessage("");
+
+    try {
+      const response = await fetch("/api/onboarding/tag-wizard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "score",
+          ollamaBaseUrl: form.ollamaBaseUrl,
+          ollamaModel: form.ollamaModel,
+          profile: getProfileSnapshot(),
+          questions: wizardQuestions,
+          answers: wizardAnswers,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to score tags");
+      }
+
+      const payload = (await response.json()) as {
+        tags?: {
+          linkedinTargetTags?: string[];
+          gmailTargetTags?: string[];
+          linkedinMessageTags?: string[];
+          explanations?: string[];
+        };
+        error?: string;
+      };
+
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+
+      const linkedinTargetTags = payload.tags?.linkedinTargetTags ?? [];
+      const gmailTargetTags = payload.tags?.gmailTargetTags ?? [];
+      const linkedinMessageTags = payload.tags?.linkedinMessageTags ?? [];
+      const explanations = payload.tags?.explanations ?? [];
+
+      update("linkedinTargetTags", linkedinTargetTags.join(", "));
+      update("gmailTargetTags", gmailTargetTags.join(", "));
+      update("linkedinMessageTags", linkedinMessageTags.join(", "));
+      setWizardExplanations(explanations);
+
+      setWizardStatus("success");
+      setWizardMessage("Tags updated from the smart wizard.");
+    } catch (error) {
+      setWizardStatus("error");
+      setWizardMessage(
+        error instanceof Error ? error.message : "Unable to score tags",
+      );
+    }
+  };
+
+  const handlePersonaPack = async (persona: string) => {
+    setPersonaStatus("loading");
+    setPersonaMessage("");
+    setWizardExplanations([]);
+
+    try {
+      const response = await fetch("/api/onboarding/tag-wizard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "persona",
+          persona,
+          ollamaBaseUrl: form.ollamaBaseUrl,
+          ollamaModel: form.ollamaModel,
+          profile: getProfileSnapshot(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to apply persona pack");
+      }
+
+      const payload = (await response.json()) as {
+        tags?: {
+          linkedinTargetTags?: string[];
+          gmailTargetTags?: string[];
+          linkedinMessageTags?: string[];
+          explanations?: string[];
+        };
+        error?: string;
+      };
+
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+
+      const linkedinTargetTags = payload.tags?.linkedinTargetTags ?? [];
+      const gmailTargetTags = payload.tags?.gmailTargetTags ?? [];
+      const linkedinMessageTags = payload.tags?.linkedinMessageTags ?? [];
+      const explanations = payload.tags?.explanations ?? [];
+
+      update("linkedinTargetTags", linkedinTargetTags.join(", "));
+      update("gmailTargetTags", gmailTargetTags.join(", "));
+      update("linkedinMessageTags", linkedinMessageTags.join(", "));
+      update("linkedinPersonaPack", persona);
+      setWizardExplanations(explanations);
+
+      setPersonaStatus("success");
+      setPersonaMessage("Persona pack applied.");
+    } catch (error) {
+      setPersonaStatus("error");
+      setPersonaMessage(
+        error instanceof Error ? error.message : "Unable to apply persona pack",
+      );
+    }
+  };
+
+  const handleGenerateVariants = async () => {
+    setVariantStatus("loading");
+    setVariantMessage("");
+
+    try {
+      const response = await fetch("/api/onboarding/tag-wizard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "variants",
+          ollamaBaseUrl: form.ollamaBaseUrl,
+          ollamaModel: form.ollamaModel,
+          profile: getProfileSnapshot(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate variants");
+      }
+
+      const payload = (await response.json()) as {
+        variants?: {
+          short?: string;
+          medium?: string;
+          long?: string;
+        };
+        error?: string;
+      };
+
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+
+      update("linkedinMessageShort", payload.variants?.short ?? "");
+      update("linkedinMessageMedium", payload.variants?.medium ?? "");
+      update("linkedinMessageLong", payload.variants?.long ?? "");
+
+      setVariantStatus("success");
+      setVariantMessage("Message variants generated.");
+    } catch (error) {
+      setVariantStatus("error");
+      setVariantMessage(
+        error instanceof Error ? error.message : "Unable to generate variants",
+      );
+    }
+  };
+
   return (
     <section className="flex flex-col gap-8 py-10">
       <div>
@@ -220,7 +578,7 @@ export default function OnboardingPage() {
       <Card className="border border-default-200/60">
         <CardHeader className="text-lg font-semibold">Resume Import</CardHeader>
         <Divider />
-        <CardBody className="grid gap-4 md:grid-cols-[2fr_1fr]">
+        <CardBody className="grid gap-4 md:grid-cols-[2fr_1fr_1fr]">
           <div className="flex flex-col gap-2">
             <input
               accept=".pdf,.txt"
@@ -249,6 +607,61 @@ export default function OnboardingPage() {
             ) : null}
             {parseStatus === "error" ? (
               <span className="text-xs text-danger">{parseMessage}</span>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button
+              color="secondary"
+              isLoading={resumeUploadStatus === "uploading"}
+              onPress={handleResumeUpload}
+              radius="full"
+              variant="flat"
+            >
+              Save resume locally
+            </Button>
+            {resumeUploadStatus === "success" ? (
+              <span className="text-xs text-success">{resumeUploadMessage}</span>
+            ) : null}
+            {resumeUploadStatus === "error" ? (
+              <span className="text-xs text-danger">{resumeUploadMessage}</span>
+            ) : null}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card className="border border-default-200/60">
+        <CardHeader className="text-lg font-semibold">Local Media</CardHeader>
+        <Divider />
+        <CardBody className="grid gap-4 md:grid-cols-[2fr_1fr]">
+          <div className="flex flex-col gap-2">
+            <input
+              accept="image/*"
+              className="block w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
+              type="file"
+              multiple
+              onChange={(event) =>
+                setImageFiles(Array.from(event.target.files ?? []))
+              }
+            />
+            <span className="text-xs text-default-500">
+              Upload images for LinkedIn/Gmail messages. Paths fill in automatically.
+            </span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button
+              color="secondary"
+              isLoading={imageUploadStatus === "uploading"}
+              onPress={handleImageUpload}
+              radius="full"
+              variant="flat"
+            >
+              Save images locally
+            </Button>
+            {imageUploadStatus === "success" ? (
+              <span className="text-xs text-success">{imageUploadMessage}</span>
+            ) : null}
+            {imageUploadStatus === "error" ? (
+              <span className="text-xs text-danger">{imageUploadMessage}</span>
             ) : null}
           </div>
         </CardBody>
@@ -365,6 +778,11 @@ export default function OnboardingPage() {
             onValueChange={(value) => update("linkedinTargetRoles", value)}
           />
           <Input
+            label="Target tags (comma-separated)"
+            value={form.linkedinTargetTags}
+            onValueChange={(value) => update("linkedinTargetTags", value)}
+          />
+          <Input
             label="Target industry"
             value={form.linkedinTargetIndustry}
             onValueChange={(value) => update("linkedinTargetIndustry", value)}
@@ -399,6 +817,192 @@ export default function OnboardingPage() {
             value={form.linkedinBackground}
             onValueChange={(value) => update("linkedinBackground", value)}
           />
+          <div className="flex flex-col gap-2 md:col-span-3">
+            <label className="text-sm font-medium">Message template</label>
+            <textarea
+              className="min-h-[120px] w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
+              placeholder="Hi {name}, I noticed your work in {industry}..."
+              value={form.linkedinMessageTemplate}
+              onChange={(event) =>
+                update("linkedinMessageTemplate", event.target.value)
+              }
+            />
+            <span className="text-xs text-default-500">
+              Use placeholders like {"{name}"}, {"{title}"}, {"{company}"}.
+            </span>
+          </div>
+          <Input
+            label="Message tags (comma-separated)"
+            value={form.linkedinMessageTags}
+            onValueChange={(value) => update("linkedinMessageTags", value)}
+          />
+          <Input
+            label="Message image paths (comma-separated)"
+            value={form.linkedinMessageImages}
+            onValueChange={(value) => update("linkedinMessageImages", value)}
+          />
+          <Input
+            label="Persona pack"
+            value={form.linkedinPersonaPack}
+            onValueChange={(value) => update("linkedinPersonaPack", value)}
+          />
+          <div className="flex flex-col gap-2 md:col-span-3">
+            <label className="text-sm font-medium">Message variants</label>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                color="secondary"
+                isLoading={variantStatus === "loading"}
+                onPress={handleGenerateVariants}
+                radius="full"
+                variant="flat"
+              >
+                Generate short/medium/long
+              </Button>
+              {variantStatus === "success" ? (
+                <span className="text-xs text-success">{variantMessage}</span>
+              ) : null}
+              {variantStatus === "error" ? (
+                <span className="text-xs text-danger">{variantMessage}</span>
+              ) : null}
+            </div>
+            <textarea
+              className="min-h-[100px] w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
+              placeholder="Short variant"
+              value={form.linkedinMessageShort}
+              onChange={(event) =>
+                update("linkedinMessageShort", event.target.value)
+              }
+            />
+            <textarea
+              className="min-h-[120px] w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
+              placeholder="Medium variant"
+              value={form.linkedinMessageMedium}
+              onChange={(event) =>
+                update("linkedinMessageMedium", event.target.value)
+              }
+            />
+            <textarea
+              className="min-h-[140px] w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
+              placeholder="Long variant"
+              value={form.linkedinMessageLong}
+              onChange={(event) =>
+                update("linkedinMessageLong", event.target.value)
+              }
+            />
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card className="border border-default-200/60">
+        <CardHeader className="text-lg font-semibold">Smart Tag Wizard</CardHeader>
+        <Divider />
+        <CardBody className="grid gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              color="secondary"
+              isLoading={personaStatus === "loading"}
+              onPress={() => handlePersonaPack("cto")}
+              radius="full"
+              variant="flat"
+            >
+              Apply CTO pack
+            </Button>
+            <Button
+              color="secondary"
+              isLoading={personaStatus === "loading"}
+              onPress={() => handlePersonaPack("hr")}
+              radius="full"
+              variant="flat"
+            >
+              Apply HR pack
+            </Button>
+            <Button
+              color="secondary"
+              isLoading={personaStatus === "loading"}
+              onPress={() => handlePersonaPack("founder")}
+              radius="full"
+              variant="flat"
+            >
+              Apply Founder pack
+            </Button>
+            {personaStatus === "success" ? (
+              <span className="text-xs text-success">{personaMessage}</span>
+            ) : null}
+            {personaStatus === "error" ? (
+              <span className="text-xs text-danger">{personaMessage}</span>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              color="secondary"
+              isLoading={wizardStatus === "loading"}
+              onPress={handleWizardStart}
+              radius="full"
+              variant="flat"
+            >
+              Generate MCQs
+            </Button>
+            <Button
+              color="primary"
+              isDisabled={wizardStatus !== "ready"}
+              isLoading={wizardStatus === "scoring"}
+              onPress={handleWizardScore}
+              radius="full"
+              variant="shadow"
+            >
+              Apply tags
+            </Button>
+            {wizardStatus === "success" ? (
+              <span className="text-xs text-success">{wizardMessage}</span>
+            ) : null}
+            {wizardStatus === "error" ? (
+              <span className="text-xs text-danger">{wizardMessage}</span>
+            ) : null}
+          </div>
+          {wizardExplanations.length ? (
+            <div className="rounded-xl border border-default-200 bg-default-50 p-4 text-xs text-default-600">
+              <div className="text-sm font-medium">Why these tags</div>
+              <ul className="mt-2 list-disc pl-5">
+                {wizardExplanations.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {wizardQuestions.length ? (
+            <div className="grid gap-4">
+              {wizardQuestions.map((question) => (
+                <div
+                  key={question.id}
+                  className="rounded-xl border border-default-200 bg-default-50 p-4"
+                >
+                  <p className="text-sm font-medium">{question.question}</p>
+                  <div className="mt-3 grid gap-2">
+                    {question.options.map((option) => (
+                      <label
+                        key={option.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          checked={wizardAnswers[question.id] === option.id}
+                          name={question.id}
+                          type="radio"
+                          value={option.id}
+                          onChange={(event) =>
+                            setWizardAnswers((prev) => ({
+                              ...prev,
+                              [question.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <span>{option.text}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </CardBody>
       </Card>
 
@@ -466,6 +1070,16 @@ export default function OnboardingPage() {
             label="Signature experience"
             value={form.gmailExperience}
             onValueChange={(value) => update("gmailExperience", value)}
+          />
+          <Input
+            label="Attachment paths (comma-separated)"
+            value={form.gmailAttachments}
+            onValueChange={(value) => update("gmailAttachments", value)}
+          />
+          <Input
+            label="Recipient tags (comma-separated)"
+            value={form.gmailTargetTags}
+            onValueChange={(value) => update("gmailTargetTags", value)}
           />
         </CardBody>
       </Card>

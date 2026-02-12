@@ -71,13 +71,23 @@ class Settings:
                 'password': 'your_linkedin_password',
                 'headless': False,
                 'target_roles': ['HR Manager', 'Technical Recruiter', 'Talent Acquisition'],
+                'target_tags': [],
                 'target_industry': 'Technology',
                 'job_titles': ['Software Engineer', 'Python Developer', 'Full Stack Developer'],
                 'daily_connection_limit': 20,
                 'daily_message_limit': 10,
                 'daily_application_limit': 15,
                 'max_connections_per_search': 10,
-                'my_background': 'Experienced software developer passionate about building scalable applications'
+                'my_background': 'Experienced software developer passionate about building scalable applications',
+                'message_template': '',
+                'message_tags': [],
+                'message_image_paths': [],
+                'persona_pack': '',
+                'message_variants': {
+                    'short': '',
+                    'medium': '',
+                    'long': ''
+                }
             },
             
             'gmail': {
@@ -92,7 +102,9 @@ class Settings:
                 'my_linkedin': 'https://linkedin.com/in/yourprofile',
                 'my_portfolio': 'https://yourportfolio.com',
                 'my_skills': 'Python, React, Node.js, AWS',
-                'my_experience': '3+ years building web applications'
+                'my_experience': '3+ years building web applications',
+                'attachment_paths': [],
+                'target_tags': []
             },
             
             'x_twitter': {

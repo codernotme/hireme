@@ -2,8 +2,6 @@
 
 Automated outreach and job-application platform focused on LinkedIn-style messaging, cold email, and multi-platform applications. The AI model runs locally via Ollama to keep data on-device.
 
-Built by **codernotme**.
-
 ## Overview
 
 HireMe orchestrates:

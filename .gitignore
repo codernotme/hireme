@@ -34,6 +34,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# local bot data
+/bot/config/config.yaml
+/bot/logs/
+/bot/uploads/
+/logs/
+/bot/config/recipients.csv
+
+# python caches
+__pycache__/
+*.pyc
+
 pnpm-lock.yaml
 yarn.lock
 package-lock.json

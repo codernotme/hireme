@@ -35,7 +35,7 @@ class JobAutomationBot:
     
     def setup_logging(self):
         """Configure logging for the bot"""
-        log_dir = Path("logs")
+        log_dir = Path(__file__).resolve().parent / "logs"
         log_dir.mkdir(exist_ok=True)
         
         log_file = log_dir / f"bot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
@@ -128,7 +128,7 @@ class JobAutomationBot:
             'applications': self.job_platforms.get_stats()
         }
         
-        report_path = Path("logs") / f"report_{report['date']}.json"
+        report_path = Path(__file__).resolve().parent / "logs" / f"report_{report['date']}.json"
         import json
         with open(report_path, 'w') as f:
             json.dump(report, f, indent=2)

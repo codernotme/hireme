@@ -69,7 +69,7 @@ export default function RootLayout({
                 <Link
                   isExternal
                   className="text-default-500"
-                  href="https://github.com/codernotme/hireme"
+                  href={siteConfig.links.github}
                 >
                   GitHub
                 </Link>

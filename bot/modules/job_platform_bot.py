@@ -5,6 +5,7 @@ Handles applications on Unstop, Naukri, Internshala, and other platforms
 
 import logging
 import time
+from pathlib import Path
 from typing import Dict, List, Optional
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -45,8 +46,13 @@ class JobPlatformBot:
         chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
         
         # Set download directory for resume
+        resume_path = self.config.get('resume_path', '')
+        download_dir = '/tmp'
+        if resume_path:
+            download_dir = str(Path(resume_path).expanduser().resolve().parent)
+
         prefs = {
-            'download.default_directory': self.config.get('resume_path', '/home/claude'),
+            'download.default_directory': download_dir,
             'download.prompt_for_download': False,
         }
         chrome_options.add_experimental_option('prefs', prefs)

@@ -8,6 +8,8 @@ import smtplib
 import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from typing import Dict, List, Optional
 import csv
 from pathlib import Path
@@ -20,6 +22,7 @@ class GmailBot:
         self.config = config
         self.ai = ai_engine
         self.logger = logging.getLogger(__name__)
+        self.log_dir = Path(__file__).resolve().parent.parent / 'logs'
         self.stats = {
             'emails_sent': 0,
             'emails_failed': 0
@@ -58,6 +61,16 @@ class GmailBot:
                 reader = csv.DictReader(f)
                 for row in reader:
                     recipients.append(row)
+
+            target_tags = set(self.config.get('target_tags', []))
+            if target_tags:
+                filtered = []
+                for recipient in recipients:
+                    tags_raw = recipient.get('tags', '')
+                    tags = {t.strip() for t in tags_raw.split(',') if t.strip()}
+                    if tags & target_tags:
+                        filtered.append(recipient)
+                recipients = filtered
             
             self.logger.info(f"Loaded {len(recipients)} recipients from {csv_file}")
             return recipients
@@ -115,6 +128,28 @@ class GmailBot:
         
         msg.attach(part1)
         msg.attach(part2)
+
+        attachment_paths = self.config.get('attachment_paths', [])
+        for attachment in attachment_paths:
+            if not attachment:
+                continue
+            path = Path(attachment)
+            if not path.exists():
+                self.logger.warning(f"Attachment not found: {attachment}")
+                continue
+
+            try:
+                with open(path, 'rb') as file:
+                    part = MIMEBase('application', 'octet-stream')
+                    part.set_payload(file.read())
+                encoders.encode_base64(part)
+                part.add_header(
+                    'Content-Disposition',
+                    f'attachment; filename="{path.name}"'
+                )
+                msg.attach(part)
+            except Exception as e:
+                self.logger.warning(f"Failed to attach {attachment}: {e}")
         
         return msg
     
@@ -215,7 +250,7 @@ class GmailBot:
     
     def _log_sent_email(self, recipient: Dict, subject: str):
         """Log sent email details"""
-        log_file = Path('logs/sent_emails.csv')
+        log_file = self.log_dir / 'sent_emails.csv'
         log_file.parent.mkdir(exist_ok=True)
         
         file_exists = log_file.exists()
@@ -237,7 +272,7 @@ class GmailBot:
     
     def _load_sent_log(self) -> List[Dict]:
         """Load sent email log"""
-        log_file = Path('logs/sent_emails.csv')
+        log_file = self.log_dir / 'sent_emails.csv'
         
         if not log_file.exists():
             return []

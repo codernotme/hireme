@@ -27,6 +27,47 @@ class LinkedInBot:
             'messages_sent': 0,
             'jobs_applied': 0
         }
+
+    def _unique_list(self, items: List[str]) -> List[str]:
+        seen = set()
+        ordered = []
+        for item in items:
+            cleaned = item.strip()
+            if not cleaned or cleaned in seen:
+                continue
+            seen.add(cleaned)
+            ordered.append(cleaned)
+        return ordered
+
+    def _build_message(self, recipient_info: Dict) -> str:
+        template = self.config.get('message_template', '').strip()
+        message_tags = self.config.get('message_tags', [])
+
+        if template:
+            variables = {
+                **recipient_info,
+                'tags': ", ".join(message_tags) if message_tags else "",
+            }
+            try:
+                return self.ai.personalize_template(template, variables)
+            except Exception as e:
+                self.logger.warning(f"Failed to personalize template: {e}")
+                return template
+
+        return self.ai.generate_linkedin_message(recipient_info)
+
+    def _attach_images(self, image_paths: List[str]) -> None:
+        if not image_paths:
+            return
+
+        try:
+            file_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="file"]')
+            file_input.send_keys("\n".join(image_paths))
+            time.sleep(2)
+        except NoSuchElementException:
+            self.logger.warning("No attachment input found for LinkedIn message")
+        except Exception as e:
+            self.logger.warning(f"Failed to attach images: {e}")
     
     def _setup_driver(self):
         """Initialize Selenium WebDriver"""
@@ -132,12 +173,15 @@ class LinkedInBot:
         """Send personalized connection requests"""
         if target_roles is None:
             target_roles = self.config.get('target_roles', ['HR Manager', 'Technical Recruiter', 'Talent Acquisition'])
+
+        target_tags = self.config.get('target_tags', [])
+        search_keywords = self._unique_list([*target_roles, *target_tags])
         
         filters = {
             'industry': self.config.get('target_industry', None)
         }
         
-        people = self.search_people(target_roles, filters)
+        people = self.search_people(search_keywords, filters)
         
         for person in people:
             try:
@@ -149,7 +193,7 @@ class LinkedInBot:
                     'my_interest': 'exploring opportunities in ' + person['keyword']
                 }
                 
-                message = self.ai.generate_linkedin_message(recipient_info)
+                message = self._build_message(recipient_info)
                 
                 # Visit profile
                 self.driver.get(person['url'])
@@ -217,10 +261,20 @@ class LinkedInBot:
                     
                     # Generate follow-up message
                     context = "Following up on job opportunities and networking"
-                    message = self.ai.generate_linkedin_follow_up(context)
+                    message = self._build_message({
+                        'name': 'there',
+                        'title': '',
+                        'company': '',
+                        'industry': '',
+                        'my_background': self.config.get('my_background', ''),
+                        'my_interest': context
+                    })
                     
                     message_field = self.driver.find_element(By.CSS_SELECTOR, '.msg-form__contenteditable')
                     message_field.send_keys(message)
+
+                    image_paths = self.config.get('message_image_paths', [])
+                    self._attach_images(image_paths)
                     
                     send_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
                     send_button.click()
