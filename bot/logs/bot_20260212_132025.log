@@ -1,0 +1,128 @@
+2026-02-12 13:20:25,781 - config.settings - WARNING - Config file not found: /home/codernotme/Projects/Github/hireme/bot/config/config.yaml
+2026-02-12 13:20:25,781 - config.settings - INFO - Creating default configuration
+2026-02-12 13:20:25,785 - config.settings - INFO - Default configuration created at /home/codernotme/Projects/Github/hireme/bot/config/config.yaml
+2026-02-12 13:20:25,785 - config.settings - WARNING - Please update the configuration file with your actual credentials!
+2026-02-12 13:20:25,789 - config.settings - INFO - Configuration loaded from /home/codernotme/Projects/Github/hireme/bot/config/config.yaml
+2026-02-12 13:20:25,789 - modules.ollama_ai - INFO - Initialized Ollama with model: llama2
+2026-02-12 13:20:26,266 - modules.x_bot - ERROR - X authentication failed: 401 Unauthorized
+Unauthorized
+2026-02-12 13:20:26,266 - modules.x_bot - WARNING - X bot will run in mock mode
+2026-02-12 13:20:26,266 - __main__ - INFO - Job Automation Bot initialized successfully
+2026-02-12 13:20:26,266 - __main__ - INFO - Starting full automation campaign
+2026-02-12 13:20:26,266 - __main__ - INFO - Starting LinkedIn outreach campaign
+2026-02-12 13:20:27,928 - modules.linkedin_bot - INFO - WebDriver initialized for LinkedIn
+2026-02-12 13:20:35,268 - modules.linkedin_bot - INFO - Successfully logged into LinkedIn
+2026-02-12 13:20:43,422 - modules.linkedin_bot - ERROR - Search failed for keyword 'Technical Recruiter': Message: invalid session id: session deleted as the browser has closed the connection
+from disconnected: not connected to DevTools
+  (Session info: chrome=145.0.7632.45); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+#0 0x55c9d79bed0a <unknown>
+#1 0x55c9d73ce682 <unknown>
+#2 0x55c9d73b42d3 <unknown>
+#3 0x55c9d73dd921 <unknown>
+#4 0x55c9d7452350 <unknown>
+#5 0x55c9d746ba48 <unknown>
+#6 0x55c9d741588f <unknown>
+#7 0x55c9d7416651 <unknown>
+#8 0x55c9d7983159 <unknown>
+#9 0x55c9d7986061 <unknown>
+#10 0x55c9d796f919 <unknown>
+#11 0x55c9d7986c2e <unknown>
+#12 0x55c9d7955c90 <unknown>
+#13 0x55c9d79ab358 <unknown>
+#14 0x55c9d79ab528 <unknown>
+#15 0x55c9d79bd353 <unknown>
+#16 0x7ff482a52464 start_thread
+#17 0x7ff482ad55ec __clone3
+
+2026-02-12 13:20:43,434 - modules.linkedin_bot - ERROR - Search failed for keyword 'Talent Acquisition': Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+#0 0x55c9d79bed0a <unknown>
+#1 0x55c9d73ce370 <unknown>
+#2 0x55c9d7414ae0 <unknown>
+#3 0x55c9d7449f26 <unknown>
+#4 0x55c9d7444538 <unknown>
+#5 0x55c9d744394c <unknown>
+#6 0x55c9d7393cc5 <unknown>
+#7 0x55c9d7983159 <unknown>
+#8 0x55c9d7986061 <unknown>
+#9 0x55c9d796f919 <unknown>
+#10 0x55c9d7986c2e <unknown>
+#11 0x55c9d7955c90 <unknown>
+#12 0x55c9d7391474 <unknown>
+#13 0x7ff4829e35b5 __libc_start_call_main
+#14 0x7ff4829e3668 __libc_start_main_alias_2
+#15 0x55c9d73500aa _start
+
+2026-02-12 13:20:43,434 - modules.linkedin_bot - INFO - Found 0 potential connections
+2026-02-12 13:20:43,438 - modules.linkedin_bot - ERROR - Messaging failed: Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+#0 0x55c9d79bed0a <unknown>
+#1 0x55c9d73ce370 <unknown>
+#2 0x55c9d7414ae0 <unknown>
+#3 0x55c9d7449f26 <unknown>
+#4 0x55c9d7444538 <unknown>
+#5 0x55c9d744394c <unknown>
+#6 0x55c9d7393cc5 <unknown>
+#7 0x55c9d7983159 <unknown>
+#8 0x55c9d7986061 <unknown>
+#9 0x55c9d796f919 <unknown>
+#10 0x55c9d7986c2e <unknown>
+#11 0x55c9d7955c90 <unknown>
+#12 0x55c9d7391474 <unknown>
+#13 0x7ff4829e35b5 __libc_start_call_main
+#14 0x7ff4829e3668 __libc_start_main_alias_2
+#15 0x55c9d73500aa _start
+
+2026-02-12 13:20:43,438 - __main__ - INFO - LinkedIn outreach completed: {'connections_sent': 0, 'messages_sent': 0, 'jobs_applied': 0}
+2026-02-12 13:20:43,438 - __main__ - INFO - Starting Gmail cold email campaign
+2026-02-12 13:20:43,438 - modules.gmail_bot - WARNING - Recipients file not found: config/recipients.csv
+2026-02-12 13:20:43,438 - modules.gmail_bot - WARNING - No recipients to send emails to
+2026-02-12 13:20:43,438 - __main__ - INFO - Gmail campaign completed: {'emails_sent': 0, 'emails_failed': 0}
+2026-02-12 13:20:43,438 - __main__ - INFO - Starting X (Twitter) engagement
+2026-02-12 13:20:43,450 - modules.ollama_ai - ERROR - Ollama generation failed: 404 Client Error: Not Found for url: http://localhost:11434/api/generate
+2026-02-12 13:20:43,450 - modules.x_bot - ERROR - Failed to post: 404 Client Error: Not Found for url: http://localhost:11434/api/generate
+2026-02-12 13:20:43,452 - modules.ollama_ai - ERROR - Ollama generation failed: 404 Client Error: Not Found for url: http://localhost:11434/api/generate
+2026-02-12 13:20:43,452 - modules.x_bot - ERROR - Failed to post: 404 Client Error: Not Found for url: http://localhost:11434/api/generate
+2026-02-12 13:20:43,454 - modules.ollama_ai - ERROR - Ollama generation failed: 404 Client Error: Not Found for url: http://localhost:11434/api/generate
+2026-02-12 13:20:43,454 - modules.x_bot - ERROR - Failed to post: 404 Client Error: Not Found for url: http://localhost:11434/api/generate
+2026-02-12 13:20:43,779 - modules.x_bot - ERROR - Search failed for '#hiring software engineer': 401 Unauthorized
+Unauthorized
+2026-02-12 13:20:44,079 - modules.x_bot - ERROR - Search failed for '#jobopening developer': 401 Unauthorized
+Unauthorized
+2026-02-12 13:20:44,378 - modules.x_bot - ERROR - Search failed for '#techjobs': 401 Unauthorized
+Unauthorized
+2026-02-12 13:20:44,673 - modules.x_bot - ERROR - Search failed for '#nowhiring': 401 Unauthorized
+Unauthorized
+2026-02-12 13:20:44,975 - modules.x_bot - ERROR - Search failed for 'hiring python developer': 401 Unauthorized
+Unauthorized
+2026-02-12 13:20:44,976 - modules.x_bot - INFO - Completed 0 engagements
+2026-02-12 13:20:44,976 - __main__ - INFO - X engagement completed: {'posts_created': 0, 'engagements': 0, 'followers_gained': 0}
+2026-02-12 13:20:44,976 - __main__ - INFO - Starting automated job applications
+2026-02-12 13:20:45,461 - modules.job_platform_bot - INFO - WebDriver initialized for job platforms
+2026-02-12 13:20:53,406 - modules.job_platform_bot - ERROR - Unstop automation failed: Message: invalid session id: session deleted as the browser has closed the connection
+from disconnected: not connected to DevTools
+  (Session info: chrome=145.0.7632.45); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+#0 0x559bb9157d0a <unknown>
+#1 0x559bb8b67682 <unknown>
+#2 0x559bb8b4d2d3 <unknown>
+#3 0x559bb8b76921 <unknown>
+#4 0x559bb8beb350 <unknown>
+#5 0x559bb8c04a48 <unknown>
+#6 0x559bb8bae88f <unknown>
+#7 0x559bb8baf651 <unknown>
+#8 0x559bb911c159 <unknown>
+#9 0x559bb911f061 <unknown>
+#10 0x559bb9108919 <unknown>
+#11 0x559bb911fc2e <unknown>
+#12 0x559bb90eec90 <unknown>
+#13 0x559bb9144358 <unknown>
+#14 0x559bb9144528 <unknown>
+#15 0x559bb9156353 <unknown>
+#16 0x7f2c0c92d464 start_thread
+#17 0x7f2c0c9b05ec __clone3
+
+2026-02-12 13:20:53,854 - modules.linkedin_bot - INFO - WebDriver initialized for LinkedIn
+2026-02-12 13:20:55,247 - modules.linkedin_bot - ERROR - LinkedIn login failed: 'email'
+2026-02-12 13:20:55,247 - __main__ - ERROR - Job applications failed: 'email'

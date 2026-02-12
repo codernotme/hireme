@@ -29,11 +29,19 @@ export const siteConfig = {
       label: "About",
       href: "/about",
     },
+    {
+      label: "Onboarding",
+      href: "/onboarding",
+    },
   ],
   navMenuItems: [
     {
       label: "Docs",
       href: "/docs",
+    },
+    {
+      label: "Onboarding",
+      href: "/onboarding",
     },
     {
       label: "Pricing",
