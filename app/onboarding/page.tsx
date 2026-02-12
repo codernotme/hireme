@@ -86,6 +86,11 @@ export default function OnboardingPage() {
     "idle",
   );
   const [message, setMessage] = useState<string>("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [parseStatus, setParseStatus] = useState<
+    "idle" | "parsing" | "success" | "error"
+  >("idle");
+  const [parseMessage, setParseMessage] = useState<string>("");
 
   const update = (key: keyof FormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -117,6 +122,92 @@ export default function OnboardingPage() {
     }
   };
 
+  const mergeParsed = (data: Partial<FormState>) => {
+    setForm((prev) => {
+      const next = { ...prev };
+      const assignIfEmpty = (key: keyof FormState, value?: string) => {
+        if (value && !String(prev[key]).trim()) {
+          next[key] = value as never;
+        }
+      };
+
+      assignIfEmpty("userName", data.userName);
+      assignIfEmpty("userEmail", data.userEmail);
+      assignIfEmpty("userPhone", data.userPhone);
+      assignIfEmpty("userTitle", data.userTitle);
+      assignIfEmpty("userLinkedin", data.userLinkedin);
+      assignIfEmpty("userPortfolio", data.userPortfolio);
+      assignIfEmpty("userGithub", data.userGithub);
+      assignIfEmpty("userSkills", data.userSkills);
+      assignIfEmpty("userExperience", data.userExperience);
+      assignIfEmpty("userEducation", data.userEducation);
+
+      assignIfEmpty("gmailName", data.userName);
+      assignIfEmpty("gmailEmail", data.userEmail);
+      assignIfEmpty("gmailPhone", data.userPhone);
+      assignIfEmpty("gmailTitle", data.userTitle);
+      assignIfEmpty("gmailLinkedin", data.userLinkedin);
+      assignIfEmpty("gmailPortfolio", data.userPortfolio);
+      assignIfEmpty("gmailSkills", data.userSkills);
+      assignIfEmpty("gmailExperience", data.userExperience);
+
+      assignIfEmpty("jobsName", data.userName);
+      assignIfEmpty("jobsEmail", data.userEmail);
+      assignIfEmpty("jobsPhone", data.userPhone);
+      assignIfEmpty("jobsSkills", data.userSkills);
+      assignIfEmpty("jobsExperience", data.userExperience);
+      assignIfEmpty("jobsEducation", data.userEducation);
+
+      return next;
+    });
+  };
+
+  const handleResumeParse = async () => {
+    if (!resumeFile) {
+      setParseStatus("error");
+      setParseMessage("Please choose a resume file first.");
+
+      return;
+    }
+
+    setParseStatus("parsing");
+    setParseMessage("");
+
+    try {
+      const body = new FormData();
+      body.append("file", resumeFile);
+      body.append("ollamaBaseUrl", form.ollamaBaseUrl);
+      body.append("ollamaModel", form.ollamaModel);
+
+      const response = await fetch("/api/onboarding/parse-resume", {
+        method: "POST",
+        body,
+      });
+
+      if (!response.ok) {
+        throw new Error("Resume parsing failed");
+      }
+
+      const payload = (await response.json()) as {
+        data?: Partial<FormState>;
+        error?: string;
+      };
+
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+
+      mergeParsed(payload.data ?? {});
+      setParseStatus("success");
+      setParseMessage("Resume parsed and fields filled where empty.");
+    } catch (error) {
+      setParseStatus("error");
+      setParseMessage(
+        error instanceof Error ? error.message : "Unable to parse resume",
+      );
+    }
+  };
+
   return (
     <section className="flex flex-col gap-8 py-10">
       <div>
@@ -125,6 +216,43 @@ export default function OnboardingPage() {
           Fill this once and generate your local bot config.
         </p>
       </div>
+
+      <Card className="border border-default-200/60">
+        <CardHeader className="text-lg font-semibold">Resume Import</CardHeader>
+        <Divider />
+        <CardBody className="grid gap-4 md:grid-cols-[2fr_1fr]">
+          <div className="flex flex-col gap-2">
+            <input
+              accept=".pdf,.txt"
+              className="block w-full rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm"
+              type="file"
+              onChange={(event) =>
+                setResumeFile(event.target.files?.[0] ?? null)
+              }
+            />
+            <span className="text-xs text-default-500">
+              Upload a PDF or TXT resume. Ollama will extract key details locally.
+            </span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button
+              color="primary"
+              isLoading={parseStatus === "parsing"}
+              onPress={handleResumeParse}
+              radius="full"
+              variant="shadow"
+            >
+              Parse resume
+            </Button>
+            {parseStatus === "success" ? (
+              <span className="text-xs text-success">{parseMessage}</span>
+            ) : null}
+            {parseStatus === "error" ? (
+              <span className="text-xs text-danger">{parseMessage}</span>
+            ) : null}
+          </div>
+        </CardBody>
+      </Card>
 
       <Card className="border border-default-200/60">
         <CardHeader className="text-lg font-semibold">Ollama</CardHeader>
