@@ -13,11 +13,12 @@ RUN npm run build
 FROM node:20-bookworm-slim
 
 # Python for the automation bot
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+# Python for the automation bot
+RUN apt-get update --fix-missing || apt-get update && apt-get install -y --no-install-recommends \
+  python3 \
+  python3-pip \
+  python3-venv \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
