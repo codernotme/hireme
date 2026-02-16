@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const config = {
     ollama: {
       base_url: String(payload.ollamaBaseUrl ?? "http://localhost:11434"),
-      model: String(payload.ollamaModel ?? "llama2"),
+      model: String(payload.ollamaModel ?? "llama3.2"),
       temperature: Number(payload.ollamaTemperature ?? 0.7),
     },
     user_profile: {

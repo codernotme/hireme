@@ -71,7 +71,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("file");
   const baseUrl = String(formData.get("ollamaBaseUrl") || env.ollamaBaseUrl);
-  const model = String(formData.get("ollamaModel") || "llama2");
+  const model = String(formData.get("ollamaModel") || "llama3.2");
 
   if (!(file instanceof File)) {
     logBackend("warn", "Resume parse aborted: no file uploaded.");

@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Divider } from "@heroui/divider";
 import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 import { Switch } from "@heroui/switch";
 
 import { title, subtitle } from "@/components/primitives";
 
 const defaultForm = {
   ollamaBaseUrl: "http://localhost:11434",
-  ollamaModel: "llama2",
+  ollamaModel: "llama3.2",
   ollamaTemperature: "0.7",
   userName: "",
   userEmail: "",
@@ -136,6 +137,69 @@ export default function OnboardingPage() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [variantMessage, setVariantMessage] = useState<string>("");
+  const [ollamaStatus, setOllamaStatus] = useState<{
+    reachable: boolean;
+    models: Array<{ name: string; fullName: string }>;
+    defaultModel: string;
+  } | null>(null);
+  const [ollamaChecking, setOllamaChecking] = useState(false);
+
+  const checkOllama = async () => {
+    const url = form.ollamaBaseUrl || "http://localhost:11434";
+    setOllamaChecking(true);
+    try {
+      const res = await fetch(`/api/ollama?baseUrl=${encodeURIComponent(url)}`);
+      const data = (await res.json()) as {
+        reachable: boolean;
+        models: Array<{ name: string; fullName: string }>;
+        defaultModel: string;
+      };
+      const models = data.models ?? [];
+      const defaultModel = data.defaultModel ?? "llama3.2";
+      setOllamaStatus({
+        reachable: data.reachable,
+        models,
+        defaultModel,
+      });
+      setForm((prev) => {
+        const current = prev.ollamaModel || defaultModel;
+        const inList = models.some((m) => m.name === current);
+        return { ...prev, ollamaModel: inList ? current : defaultModel };
+      });
+    } catch {
+      setOllamaStatus(null);
+    } finally {
+      setOllamaChecking(false);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const url = "http://localhost:11434";
+    fetch(`/api/ollama?baseUrl=${encodeURIComponent(url)}`)
+      .then((res) => res.json())
+      .then((data: { reachable?: boolean; models?: Array<{ name: string; fullName: string }>; defaultModel?: string }) => {
+        if (cancelled) return;
+        const models = data.models ?? [];
+        const defaultModel = data.defaultModel ?? "llama3.2";
+        setOllamaStatus({
+          reachable: data.reachable ?? false,
+          models,
+          defaultModel,
+        });
+        setForm((prev) => {
+          const current = prev.ollamaModel || defaultModel;
+          const inList = models.some((m) => m.name === current);
+          return { ...prev, ollamaModel: inList ? current : defaultModel };
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setOllamaStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const update = (key: keyof FormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -671,19 +735,67 @@ export default function OnboardingPage() {
       </Card>
 
       <Card className="border border-default-200/60">
-        <CardHeader className="text-lg font-semibold">Ollama</CardHeader>
+        <CardHeader className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-lg font-semibold">Ollama (local AI)</span>
+            {ollamaStatus !== null ? (
+              <span
+                className={
+                  ollamaStatus.reachable
+                    ? "text-sm text-success"
+                    : "text-sm text-warning"
+                }
+              >
+                {ollamaStatus.reachable
+                  ? `Connected · ${ollamaStatus.models.length} model${ollamaStatus.models.length === 1 ? "" : "s"}`
+                  : "Not reachable — run ollama serve"}
+              </span>
+            ) : (
+              <span className="text-sm text-default-400">Checking…</span>
+            )}
+            <Button
+              size="sm"
+              variant="flat"
+              isLoading={ollamaChecking}
+              onPress={checkOllama}
+              className="ml-auto"
+            >
+              Check connection
+            </Button>
+          </div>
+        </CardHeader>
         <Divider />
         <CardBody className="grid gap-4 md:grid-cols-3">
           <Input
             label="Base URL"
+            placeholder="http://localhost:11434"
             value={form.ollamaBaseUrl}
             onValueChange={(value) => update("ollamaBaseUrl", value)}
           />
-          <Input
-            label="Model"
-            value={form.ollamaModel}
-            onValueChange={(value) => update("ollamaModel", value)}
-          />
+          {ollamaStatus?.reachable && ollamaStatus.models.length > 0 ? (
+            <Select
+              label="Model"
+              selectedKeys={[form.ollamaModel]}
+              onSelectionChange={(keys) => {
+                const v = Array.from(keys)[0];
+                if (typeof v === "string") update("ollamaModel", v);
+              }}
+              placeholder="Choose model"
+            >
+              {ollamaStatus.models.map((m) => (
+                <SelectItem key={m.name}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </Select>
+          ) : (
+            <Input
+              label="Model"
+              placeholder="llama3.2"
+              value={form.ollamaModel}
+              onValueChange={(value) => update("ollamaModel", value)}
+            />
+          )}
           <Input
             label="Temperature"
             value={form.ollamaTemperature}

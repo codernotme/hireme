@@ -132,7 +132,7 @@ export async function POST(request: Request) {
 
   const action = String(payload.action ?? "");
   const baseUrl = String(payload.ollamaBaseUrl ?? env.ollamaBaseUrl);
-  const model = String(payload.ollamaModel ?? "llama2");
+  const model = String(payload.ollamaModel ?? "llama3.2");
   const mcqCount = Number(payload.mcqCount ?? 5);
   const profile = payload.profile ?? {};
 

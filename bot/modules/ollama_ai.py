@@ -13,7 +13,7 @@ class OllamaAI:
     
     def __init__(self, config: Dict):
         self.base_url = config.get('base_url', 'http://localhost:11434')
-        self.model = config.get('model', 'llama2')
+        self.model = config.get('model', 'llama3.2')
         self.fallback_models = config.get('fallback_models', []) or []
         self.logger = logging.getLogger(__name__)
         self.logger.info(f"Initialized Ollama with model: {self.model}")
