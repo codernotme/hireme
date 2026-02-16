@@ -10,15 +10,14 @@ COPY . .
 RUN npm run build
 
 # ---- Runtime ----
-FROM node:20-bookworm-slim
+FROM node:20-alpine
 
 # Python for the automation bot
-# Python for the automation bot
-RUN apt-get update --fix-missing || apt-get update && apt-get install -y --no-install-recommends \
-  python3 \
-  python3-pip \
-  python3-venv \
-  && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache python3 py3-pip && \
+  python3 -m venv /opt/venv && \
+  /opt/venv/bin/pip install --upgrade pip
+
+ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
