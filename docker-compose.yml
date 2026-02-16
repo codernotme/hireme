@@ -1,0 +1,37 @@
+# Local-first deployment: app + Ollama + data on this host.
+# No cloud DB or external APIs required. Data and LLM stay local.
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      OLLAMA_BASE_URL: http://ollama:11434
+      BOT_WORKDIR: /app/bot
+      BOT_PYTHON_PATH: python3
+      BOT_CONFIG_PATH: config/config.yaml
+    volumes:
+      # Persist config, uploads, and logs on this host
+      - bot_config:/app/bot/config
+      - bot_uploads:/app/bot/uploads
+      - bot_logs:/app/bot/logs
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  bot_config:
+  bot_uploads:
+  bot_logs:
+  ollama_data:

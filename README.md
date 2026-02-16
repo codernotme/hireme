@@ -46,6 +46,26 @@ npm install
 npm run dev
 ```
 
+## Deploy (local-first)
+
+Deploy on a single machine with **data and LLM on localhost**: no cloud database, no external API for AI. Everything runs in Docker on your host.
+
+```bash
+# Build and run app + Ollama; data in Docker volumes
+docker compose up -d
+
+# Pull an Ollama model (one-time)
+docker compose exec ollama ollama pull llama3.2
+```
+
+The first `docker compose up -d` (or `docker compose build`) needs network access to install dependencies and pull images.
+
+- **App**: http://localhost:3000  
+- **Ollama**: inside the `ollama` service (app uses `OLLAMA_BASE_URL=http://ollama:11434`)  
+- **Data**: `bot` config, uploads, and logs are in Docker volumes (`bot_config`, `bot_uploads`, `bot_logs`); no data leaves the host.
+
+Config is created via the **Onboarding** UI and stored in the `bot_config` volume. Optional: copy `env.docker.example` to `.env` and override variables (e.g. `OLLAMA_BASE_URL` if Ollama runs on the host: `http://host.docker.internal:11434`).
+
 ## Local Bot Wiring
 
 HireMe connects the Next.js UI to the Python automation bot via `/api/bot`. Copy `.env.example` to `.env.local` and adjust paths if needed:

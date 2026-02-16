@@ -8,6 +8,7 @@ import { Providers } from "./providers";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: {
@@ -47,34 +48,7 @@ export default function RootLayout({
             <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
               {children}
             </main>
-            <footer className="w-full flex items-center justify-between flex-wrap gap-4 px-6 py-6 text-sm text-default-500">
-              <span>
-                HireMe - local-first job outreach automation by {" "}
-                <Link
-                  isExternal
-                  className="text-default-500"
-                  href={siteConfig.developer.url}
-                >
-                  {siteConfig.developer.name}
-                </Link>
-                .
-              </span>
-              <div className="flex items-center gap-4">
-                <Link className="text-default-500" href="/docs">
-                  Docs
-                </Link>
-                <Link className="text-default-500" href="/about">
-                  About
-                </Link>
-                <Link
-                  isExternal
-                  className="text-default-500"
-                  href={siteConfig.links.github}
-                >
-                  GitHub
-                </Link>
-              </div>
-            </footer>
+            <Footer />
           </div>
         </Providers>
       </body>

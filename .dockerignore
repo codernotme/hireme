@@ -1,0 +1,21 @@
+# Dependencies and build
+node_modules
+.next
+out
+.git
+*.md
+.env*
+.env.*
+!.env.example
+
+# Bot runtime data (use volumes in deployment)
+bot/config/config.yaml
+bot/config/recipients.csv
+bot/logs
+bot/uploads
+
+# IDE and misc
+.vscode
+.idea
+*.log
+.DS_Store
